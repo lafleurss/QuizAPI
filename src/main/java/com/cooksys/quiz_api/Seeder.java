@@ -20,8 +20,8 @@ import lombok.RequiredArgsConstructor;
 public class Seeder implements CommandLineRunner {
 
   private final QuizRepository quizRepository;
-  private final QuestionRepository questionRepository;
   private final AnswerRepository answerRepository;
+  private final QuestionRepository questionRepository;
 
   /**
    * This method seeds the database with 2 quizzes. Each quiz has 4 questions and
