@@ -4,7 +4,9 @@ import java.util.List;
 
 import com.cooksys.quiz_api.dtos.QuestionRequestDto;
 import com.cooksys.quiz_api.dtos.QuestionResponseDto;
+import com.cooksys.quiz_api.dtos.QuizRequestDto;
 import com.cooksys.quiz_api.entities.Question;
+import com.cooksys.quiz_api.entities.Quiz;
 
 import org.mapstruct.Mapper;
 
@@ -13,7 +15,7 @@ public interface QuestionMapper {
 
 	QuestionResponseDto questionEntityToDto(Question entity);
 
-	
+
 	List<Question> questionRequestDtoToEntities(List<QuestionRequestDto> questionRequestDtos);
 
 	Question questionRequestDtoToEntity(QuestionRequestDto questionRequestDto);

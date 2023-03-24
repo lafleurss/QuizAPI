@@ -12,5 +12,6 @@ public class AnswerResponseDto {
   private Long id;
 
   private String text;
+  
 
 }

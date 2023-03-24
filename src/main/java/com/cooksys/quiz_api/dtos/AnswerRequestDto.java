@@ -9,4 +9,7 @@ public class AnswerRequestDto {
 	private Long id;
 	
 	private String text;	
+	
+	private QuestionRequestDto questionRequestDto;
+
 }

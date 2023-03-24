@@ -2,6 +2,7 @@ package com.cooksys.quiz_api.controllers;
 
 import java.util.List;
 
+import com.cooksys.quiz_api.dtos.QuestionRequestDto;
 import com.cooksys.quiz_api.dtos.QuestionResponseDto;
 import com.cooksys.quiz_api.dtos.QuizRequestDto;
 import com.cooksys.quiz_api.dtos.QuizResponseDto;
@@ -48,10 +49,20 @@ public class QuizController {
 	public QuizResponseDto renameQuiz(@PathVariable Long id, @PathVariable String newName) {
 		return quizService.renameQuiz(id, newName);
 	}
+	
+	@PatchMapping("/{id}/add")	
+	public QuizResponseDto addQsToQuiz(@PathVariable Long id, @RequestBody QuestionRequestDto questionRequestDto) {
+		return quizService.addQsToQuiz(id, questionRequestDto);
+	}
 
 	@DeleteMapping("/{id}")
 	public QuizResponseDto deleteQuiz(@PathVariable Long id) {
 		return quizService.deleteQuiz(id);
+	}
+	
+	@DeleteMapping("/{id}/delete/{questionID}")
+	public QuizResponseDto deleteQsFromQuiz(@PathVariable Long id, @PathVariable Long questionId) {
+		return quizService.deleteQsFromQuiz(id);
 	}
 
 	// TODO: Implement the remaining 6 endpoints from the documentation.
