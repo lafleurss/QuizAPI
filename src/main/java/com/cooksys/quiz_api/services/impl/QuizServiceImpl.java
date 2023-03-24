@@ -65,20 +65,17 @@ public class QuizServiceImpl implements QuizService {
 		validateQuizRequest(quizReqDto);
 		// Quiz
 		Quiz quizToBeSaved = quizMapper.quizRequestDtoToEntity(quizReqDto);
-		quizToBeSaved.setDeleted(false);
-		quizToBeSaved.setQuestions(questionMapper.questionRequestDtoToEntities(quizReqDto.getQuestions()));
+		quizToBeSaved.setDeleted(false);		
 		Quiz savedQuiz = quizRepository.saveAndFlush(quizToBeSaved);
 
 		// Check if questions were passed in the bodyquestionRequestDtoToEntities
-		List<QuestionRequestDto> questionRequestDtoList = quizReqDto.getQuestions();
-		if (questionRequestDtoList != null) {
+		List<Question> questionsList = quizToBeSaved.getQuestions();
+		if (questionsList != null) {
 			// For each Question
 			List<Question> listOfQuestions = new ArrayList<>();
-			for (QuestionRequestDto questionRequestDto : questionRequestDtoList) {
-				Question questionToBeSaved = questionMapper.questionRequestDtoToEntity(questionRequestDto);
-
-				// Link and Save Question
-				questionToBeSaved.setAnswers(answerMapper.answerRequestDtosToEntities(questionRequestDto.getAnswers()));
+			for (Question questionToBeSaved : questionsList) {
+				
+				// Link and Save Question				
 				questionToBeSaved.setQuiz(savedQuiz);
 
 				Question savedQuestion = questionRepository.saveAndFlush(questionToBeSaved);
@@ -86,10 +83,9 @@ public class QuizServiceImpl implements QuizService {
 
 				// For each Answer in the question
 				List<Answer> listOfAnswers = new ArrayList<>();
-				List<AnswerRequestDto> answerRequestDtoList = questionRequestDto.getAnswers();
+				List<Answer> answersList = questionToBeSaved.getAnswers();
 
-				for (AnswerRequestDto answerRequestDto : answerRequestDtoList) {
-					Answer answerToBeSaved = answerMapper.answerRequestDtoToEntity(answerRequestDto);
+				for (Answer answerToBeSaved : answersList) {
 					// Link answer to question saved
 					answerToBeSaved.setQuestion(savedQuestion);
 					Answer savedAnswer = answerRepository.saveAndFlush(answerToBeSaved);
@@ -122,11 +118,11 @@ public class QuizServiceImpl implements QuizService {
 		if (quiz.isPresent()) {
 			List<Question> possibleQuestions = quiz.get().getQuestions();
 			int numOfQuestions = quiz.get().getQuestions().size();
-			System.out.println(numOfQuestions);
+			
 			int rnd = new Random().nextInt(numOfQuestions);
-			System.out.println(rnd);
+			
 			Long randomId = possibleQuestions.get(rnd).getId();
-			System.out.println(randomId);
+			
 			return questionMapper.questionEntityToDto(getQuestionById(randomId).get());
 		} else {
 			throw new NotFoundException("Quiz with id: " + id + " not found!");
@@ -153,32 +149,35 @@ public class QuizServiceImpl implements QuizService {
 			// Get Quiz from DB and its current list of questions
 			Quiz quizToBeSaved = quiz.get();
 			List<Question> currentQuestions = quizToBeSaved.getQuestions();
-
+			Quiz savedQuiz = quizRepository.saveAndFlush(quizToBeSaved);
+			
 			// Question and Answers from Request
 			Question questionToBeSaved = questionMapper.questionRequestDtoToEntity(questionRequestDto);
-			List<AnswerRequestDto> answerRequestDtos = questionRequestDto.getAnswers();
+			List<Answer> answersList = questionToBeSaved.getAnswers();
 
 			// Link answers to Question and Save Question
-			questionToBeSaved.setAnswers(answerMapper.answerRequestDtosToEntities(answerRequestDtos));
+			//questionToBeSaved.setAnswers(answerMapper.answerRequestDtosToEntities(answerRequestDtos));
 			questionToBeSaved.setQuiz(quizToBeSaved);
 			Question savedQuestion = questionRepository.saveAndFlush(questionToBeSaved);
-
+			// Add new qs to the current List of qs.
+			currentQuestions.add(savedQuestion);
+			
 			// For each Answer in the question
 			List<Answer> answerList = new ArrayList<>();
-			for (AnswerRequestDto answerRequestDto : answerRequestDtos) {
-				Answer answerToBeSaved = answerMapper.answerRequestDtoToEntity(answerRequestDto);
+			for (Answer answerToBeSaved : answersList) {				
 				// Link answer to question saved
 				answerToBeSaved.setQuestion(savedQuestion);
 				Answer savedAnswer = answerRepository.saveAndFlush(answerToBeSaved);
 				answerList.add(savedAnswer);
 			}
-			// Add new qs to the current List of qs. Link and Save Quiz
-			currentQuestions.add(savedQuestion);
+			// Link and Save Question and Quiz			
 			savedQuestion.setAnswers(answerList);
-			quizToBeSaved.setQuestions(currentQuestions);
-			Quiz savedQuiz = quizRepository.saveAndFlush(quizToBeSaved);
+			quizToBeSaved.setQuestions(currentQuestions);			
+
 			return quizMapper.quizEntityToDto(savedQuiz);
+			
 		} else {
+			
 			throw new NotFoundException("Quiz with id: " + id + " not found!");
 		}
 	}
