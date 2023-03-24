@@ -1,5 +1,6 @@
 package com.cooksys.quiz_api.services.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -49,9 +50,9 @@ public class QuizServiceImpl implements QuizService {
 		return quiz;
 	}
 
-	private Question getQuestionById(Long id) {
+	private Optional<Question> getQuestionById(Long id) {
 		Optional<Question> question = questionRepository.findById(id);
-		return question.get();
+		return question;
 	}
 
 	@Override
@@ -72,16 +73,19 @@ public class QuizServiceImpl implements QuizService {
 		List<QuestionRequestDto> questionRequestDtoList = quizReqDto.getQuestions();
 		if (questionRequestDtoList != null) {
 			// For each Question
-
+			List<Question> listOfQuestions = new ArrayList<>();
 			for (QuestionRequestDto questionRequestDto : questionRequestDtoList) {
 				Question questionToBeSaved = questionMapper.questionRequestDtoToEntity(questionRequestDto);
-				
+
 				// Link and Save Question
 				questionToBeSaved.setAnswers(answerMapper.answerRequestDtosToEntities(questionRequestDto.getAnswers()));
 				questionToBeSaved.setQuiz(savedQuiz);
+
 				Question savedQuestion = questionRepository.saveAndFlush(questionToBeSaved);
+				listOfQuestions.add(savedQuestion);
 
 				// For each Answer in the question
+				List<Answer> listOfAnswers = new ArrayList<>();
 				List<AnswerRequestDto> answerRequestDtoList = questionRequestDto.getAnswers();
 
 				for (AnswerRequestDto answerRequestDto : answerRequestDtoList) {
@@ -89,9 +93,14 @@ public class QuizServiceImpl implements QuizService {
 					// Link answer to question saved
 					answerToBeSaved.setQuestion(savedQuestion);
 					Answer savedAnswer = answerRepository.saveAndFlush(answerToBeSaved);
+					listOfAnswers.add(savedAnswer);
 				}
+				savedQuestion.setAnswers(listOfAnswers);
 			}
+			savedQuiz.setQuestions(listOfQuestions);
+
 		}
+
 		return quizMapper.quizEntityToDto(savedQuiz);
 	}
 
@@ -118,7 +127,7 @@ public class QuizServiceImpl implements QuizService {
 			System.out.println(rnd);
 			Long randomId = possibleQuestions.get(rnd).getId();
 			System.out.println(randomId);
-			return questionMapper.questionEntityToDto(getQuestionById(randomId));
+			return questionMapper.questionEntityToDto(getQuestionById(randomId).get());
 		} else {
 			throw new NotFoundException("Quiz with id: " + id + " not found!");
 		}
@@ -139,33 +148,35 @@ public class QuizServiceImpl implements QuizService {
 	@Override
 	public QuizResponseDto addQsToQuiz(Long id, QuestionRequestDto questionRequestDto) {
 		Optional<Quiz> quiz = getQuiz(id);
-		
 
 		if (quiz.isPresent()) {
+			// Get Quiz from DB and its current list of questions
 			Quiz quizToBeSaved = quiz.get();
-			List<Question> currentQuestions =  quizToBeSaved.getQuestions();
+			List<Question> currentQuestions = quizToBeSaved.getQuestions();
+
+			// Question and Answers from Request
 			Question questionToBeSaved = questionMapper.questionRequestDtoToEntity(questionRequestDto);
 			List<AnswerRequestDto> answerRequestDtos = questionRequestDto.getAnswers();
-			
 
-			// Add new qs to the current List of qs. Link and Save Quiz and Question
-			currentQuestions.add(questionToBeSaved);
-			quizToBeSaved.setQuestions(currentQuestions);
-			
-			Quiz savedQuiz  = quizRepository.saveAndFlush(quizToBeSaved);
-			
+			// Link answers to Question and Save Question
 			questionToBeSaved.setAnswers(answerMapper.answerRequestDtosToEntities(answerRequestDtos));
-			questionToBeSaved.setQuiz(savedQuiz);
+			questionToBeSaved.setQuiz(quizToBeSaved);
 			Question savedQuestion = questionRepository.saveAndFlush(questionToBeSaved);
 
-			// For each Answer in the question			
+			// For each Answer in the question
+			List<Answer> answerList = new ArrayList<>();
 			for (AnswerRequestDto answerRequestDto : answerRequestDtos) {
 				Answer answerToBeSaved = answerMapper.answerRequestDtoToEntity(answerRequestDto);
 				// Link answer to question saved
 				answerToBeSaved.setQuestion(savedQuestion);
-				
 				Answer savedAnswer = answerRepository.saveAndFlush(answerToBeSaved);
-			}		
+				answerList.add(savedAnswer);
+			}
+			// Add new qs to the current List of qs. Link and Save Quiz
+			currentQuestions.add(savedQuestion);
+			savedQuestion.setAnswers(answerList);
+			quizToBeSaved.setQuestions(currentQuestions);
+			Quiz savedQuiz = quizRepository.saveAndFlush(quizToBeSaved);
 			return quizMapper.quizEntityToDto(savedQuiz);
 		} else {
 			throw new NotFoundException("Quiz with id: " + id + " not found!");
@@ -173,9 +184,37 @@ public class QuizServiceImpl implements QuizService {
 	}
 
 	@Override
-	public QuizResponseDto deleteQsFromQuiz(Long id) {
-		// TODO Auto-generated method stub
-		return null;
+	public QuizResponseDto deleteQsFromQuiz(Long id, Long questionID) {
+		Optional<Quiz> quiz = getQuiz(id);
+
+		if (quiz.isPresent()) {
+			// Get Quiz from DB and its current list of questions
+			Quiz quizToBeSaved = quiz.get();
+			List<Question> currentQuestions = quizToBeSaved.getQuestions();
+
+			// Question from Request
+			Optional<Question> questionToBeRemoved = getQuestionById(questionID);
+			if (questionToBeRemoved.isPresent()) {
+				// For each Answer in the question
+				List<Answer> answerList = new ArrayList<>();
+				for (Answer answerToBeRemoved : questionToBeRemoved.get().getAnswers()) {
+					// Delete each answer in question to be removed
+					answerRepository.delete(answerToBeRemoved);
+				}
+
+				// Remove qs from the current List of qs. Link and Save Quiz
+				questionRepository.delete(questionToBeRemoved.get());
+				currentQuestions.remove(questionToBeRemoved.get());
+				quizToBeSaved.setQuestions(currentQuestions);
+
+				Quiz savedQuiz = quizRepository.saveAndFlush(quizToBeSaved);
+				return quizMapper.quizEntityToDto(savedQuiz);
+			} else {
+				throw new NotFoundException("Question with id: " + questionID + " not found in quiz with id: !" + id);
+			}
+		} else {
+			throw new NotFoundException("Quiz with id: " + id + " not found!");
+		}
 	}
 
 }

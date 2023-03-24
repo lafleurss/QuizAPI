@@ -61,8 +61,8 @@ public class QuizController {
 	}
 	
 	@DeleteMapping("/{id}/delete/{questionID}")
-	public QuizResponseDto deleteQsFromQuiz(@PathVariable Long id, @PathVariable Long questionId) {
-		return quizService.deleteQsFromQuiz(id);
+	public QuizResponseDto deleteQsFromQuiz(@PathVariable Long id, @PathVariable Long questionID) {
+		return quizService.deleteQsFromQuiz(id, questionID);
 	}
 
 	// TODO: Implement the remaining 6 endpoints from the documentation.

@@ -21,6 +21,6 @@ public interface QuizService {
 
 	QuizResponseDto addQsToQuiz(Long id, QuestionRequestDto questionRequestDto);
 
-	QuizResponseDto deleteQsFromQuiz(Long id);
+	QuizResponseDto deleteQsFromQuiz(Long id, Long questionId);
 
 }
