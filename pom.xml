@@ -11,7 +11,7 @@
 	<artifactId>quiz_api</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>quiz_api</name>
-	<description>Quiz API skeleton code for the FT assignment.</description>
+	<description>Quiz API</description>
 	<properties>
 		<java.version>11</java.version>
 		<org.mapstruct.version>1.4.1.Final</org.mapstruct.version>
